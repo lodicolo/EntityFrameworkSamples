@@ -1,0 +1,90 @@
+﻿@page "/people"
+@page "/people/{IdOrPage?}"
+@{
+    //@-page "/people/{PersonId:guid?}"
+}
+
+<PageTitle>People</PageTitle>
+
+@using Leaderboard.Data
+@inject LeaderboardService LeaderboardService
+
+<h1>People</h1>
+
+<p>This component demonstrates fetching data from a service.</p>
+
+@if (_results == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Name</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var person in _results.Values)
+            {
+                <tr>
+                    <td>@person.Id</td>
+                    <td>
+                        <a href="/people/@person.Id">@person.Name</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <span>Displaying @(Math.Min(1, _results.Values.Length) + (_results.Page * 10))-@(_results.Values.Length + (_results.Page * 10)) of @_results.Count</span>
+}
+
+@code {
+    [Parameter]
+    public string? IdOrPage
+    {
+        get => string.Empty;
+        set
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return;
+            }
+
+            if (Guid.TryParse(value, out var id))
+            {
+                Id = id;
+            }
+            else if (int.TryParse(value, out var page))
+            {
+                Page = page;
+            }
+            else
+            {
+                throw new Exception();
+            }
+        }
+    }
+
+    [Parameter]
+    public int? Page { get; set; }
+
+    [Parameter]
+    public Guid? Id { get; set; }
+
+    private bool? _orderAscending = true;
+    private PagedResult<Person>? _results;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _results = await LeaderboardService.GetPeopleAsync(
+            id: Id,
+            includeEntries: false,
+            orderAscending: _orderAscending,
+            page: Page
+        );
+    }
+}

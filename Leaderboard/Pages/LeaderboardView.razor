@@ -1,0 +1,130 @@
+﻿@page "/leaderboard"
+@page "/leaderboard/{IdOrPage?}"
+<!--page "/leaderboard/{TeamSize:int}/{Page:int}"-->
+@{
+    //@-page "/leaderboard/{TeamSize:TeamSize?}/{Page:int?}"
+    //@-page "/leaderboard/{EntryId:guid?}"
+}
+
+<PageTitle>Leaderboard</PageTitle>
+
+@using Leaderboard.Data
+@inject LeaderboardService LeaderboardService
+
+<h1>Leaderboard</h1>
+
+<p>This component demonstrates fetching data from a service.</p>
+
+@if (_results == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Rank</th>
+                <th>Id</th>
+                <th>Team Size</th>
+                <th>Score</th>
+                <th>Members</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var entry in _results.Values)
+            {
+                <tr>
+                    <td>@(1 + Array.IndexOf(_results.Values, entry) + (_results.Page * 10))</td>
+                    <td>
+                        <a href="/leaderboard/@entry.Id">@entry.Id</a>
+                    </td>
+                    <td>@entry.TeamSize</td>
+                    <td>@entry.Score</td>
+                    <td>
+                        <span>
+                            @Emit(
+                                entry.Members.Select<Person, RenderFragment>(
+                                (member, index) =>
+                                    @<text>
+                                        <a href="/people/@member.Id">@member.Name</a>@(index < entry.Members.Count - 1 ? ", " : null)
+                                    </text>
+                                )
+                            )
+                        </span>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <span>Displaying @(Math.Min(1, _results.Values.Length) + (_results.Page * 10))-@(_results.Values.Length + (_results.Page * 10)) of @_results.Count</span>
+}
+
+@code {
+    [Parameter]
+    public string? IdOrPage
+    {
+        get => string.Empty;
+        set
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return;
+            }
+
+            if (Guid.TryParse(value, out var id))
+            {
+                Id = id;
+            }
+            else if (int.TryParse(value, out var page))
+            {
+                Page = page;
+            }
+            else
+            {
+                throw new Exception();
+            }
+        }
+    }
+
+    public Guid? Id { get; set; }
+
+    [Parameter]
+    public int Page { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public int? TeamSize { get; set; }
+    
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public Guid? Find { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public Guid? FilterPersonId { get; set; }
+
+    private PagedResult<LeaderboardEntry>? _results;
+    private bool? _orderAscending = true;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _results = await LeaderboardService.GetEntriesAsync(
+            id: Id,
+            orderAscending: _orderAscending,
+            page: Page,
+            filterPersonId: FilterPersonId,
+            findPersonId: Find,
+            teamSize: TeamSize
+        );
+    }
+
+    private RenderFragment Emit(IEnumerable<RenderFragment> renderFragments) => builder =>
+    {
+        foreach (var renderFragment in renderFragments)
+        {
+            builder.AddContent(0, renderFragment);
+        }
+    };
+}

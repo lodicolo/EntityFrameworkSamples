@@ -1,0 +1,29 @@
+﻿@page "/people/add"
+
+<PageTitle>Add Person</PageTitle>
+
+@using Leaderboard.Data
+@inject LeaderboardService LeaderboardService
+
+<h1>Add Person</h1>
+
+<p>This component demonstrates adding a user.</p>
+
+<EditForm Model="@_person" OnValidSubmit="@AddUser">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <InputText id="name" @bind-Value="_person.Name" />
+
+    <button type="submit">Submit</button>
+</EditForm>
+<form method="post">
+    <label for="name">Name</label>
+    <input type="text" name="name" placeholder="John Doe" />
+</form>
+
+@code {
+    private Person _person = new();
+
+    private Task AddUser() => LeaderboardService.AddPersonAsync(_person);
+}

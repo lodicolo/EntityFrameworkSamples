@@ -1,0 +1,26 @@
+﻿@page "/leaderboard/add"
+
+<PageTitle>Add Leaderboard Entry</PageTitle>
+
+@using Leaderboard.Data
+@inject LeaderboardService LeaderboardService
+
+<h1>Add Leaderboard Entry</h1>
+
+<p>This component demonstrates adding a leaderboard entry.</p>
+
+@if (entries == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+}
+
+@code {
+    private LeaderboardEntry[]? entries;
+
+    protected override async Task OnInitializedAsync()
+    {
+    }
+}
